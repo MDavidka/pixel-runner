@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Valley Expedition: Escape From Enci | 2D Adventure Runner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            -webkit-touch-callout: none;
+        }
+
+        :root {
+            --bg-glass: rgba(11, 15, 30, 0.88);
+            --border-glass: rgba(168, 85, 247, 0.35);
+            --accent-purple: #a855f7;
+            --accent-cyan: #38bdf8;
+            --accent-gold: #facc15;
+            --accent-green: #4ade80;
+            --accent-red: #ef4444;
+            --accent-orange: #fb923c;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020108;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #fff;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #020108;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background: #030008;
+        }
+
+        /* Landscape Orientation Warning on Mobile */
+        #orientation-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #090314;
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 24px;
+        }
+
+        @media screen and (orientation: portrait) and (max-width: 900px) {
+            #orientation-warning {
+                display: flex;
+            }
+        }
+
+        .phone-rotate-icon {
+            font-size: 50px;
+            animation: rotatePrompt 2s infinite ease-in-out;
+            margin-bottom: 16px;
+        }
+
+        @keyframes rotatePrompt {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+
+        /* Glassmorphism Common Modals */
+        .game-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 2, 14, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 16px;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .hidden, .game-modal.hidden, .kaufland-shop-modal.hidden {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        .game-title {
+            font-size: clamp(28px, 5.5vw, 52px);
+            font-weight: 900;
+            background: linear-gradient(135deg, #ef4444 0%, #a855f7 50%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .game-subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+            max-width: 520px;
+            line-height: 1.45;
+        }
+
+        .menu-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-action-primary {
+            background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+            color: #fff;
+            border: 2px solid #a855f7;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(124, 58, 237, 0.5);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-action-secondary {
+            background: rgba(30, 41, 59, 0.85);
+            color: #38bdf8;
+            border: 2px solid #0284c7;
+            padding: 14px 26px;
+            font-size: 16px;
+            font-weight: 800;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-action-primary:hover, .btn-action-secondary:hover {
+            transform: scale(1.04);
+        }
+
+        /* Top Resource & Stats HUD */
+        .hud-top-bar {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 20;
+            gap: 8px;
+        }
+
+        .hud-glass-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        .res-counter-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+
+        .res-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: monospace;
+            color: #f1f5f9;
+        }
+
+        .res-item svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .hud-quick-buttons {
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+            align-items: center;
+        }
+
+        .hud-btn-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--bg-glass);
+            border: 2px solid rgba(168, 85, 247, 0.5);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.15s, border-color 0.15s;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+            position: relative;
+            padding: 3px;
+        }
+
+        .hud-btn-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        .hud-btn-icon:hover {
+            border-color: #facc15;
+            box-shadow: 0 0 16px rgba(250, 204, 21, 0.6);
+            transform: translateY(-2px) scale(1.08);
+        }
+        .hud-btn-icon:active {
+            transform: translateY(1px) scale(0.95);
+        }
+
+        .hud-btn-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        /* Top Right Score & Danger */
+        .status-indicators {
+            display: flex;
+            gap: 8px;
+        }
+
+        .status-badge {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            padding: 4px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 65px;
+        }
+
+        .status-lbl {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+        }
+
+        .status-val {
+            font-size: 15px;
+            font-weight: 900;
+            font-family: monospace;
+        }
+
+        /* XP & Level Bar */
+        .level-progress-card {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 110px;
+        }
+
+        .level-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        .xp-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            width: 45%;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            transition: width 0.3s ease;
+        }
+
+        /* Mobile Controls Ergonomic Layout with High-Contrast Wooden Icons */
+        .mobile-controls {
+            position: absolute;
+            bottom: max(16px, env(safe-area-inset-bottom, 16px));
+            left: max(16px, env(safe-area-inset-left, 16px));
+            right: max(16px, env(safe-area-inset-right, 16px));
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+            z-index: 45;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .dpad {
+            display: flex;
+            gap: 12px;
+            pointer-events: auto;
+            align-items: center;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .btn-touch {
+            width: 65px;
+            height: 65px;
+            border-radius: 12px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            cursor: pointer;
+            transition: transform 0.08s ease, filter 0.08s ease;
+            pointer-events: auto;
+            position: relative;
+            touch-action: none;
+            padding: 0;
+        }
+
+        .btn-touch img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            pointer-events: none;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.9));
+        }
+
+        .btn-touch:active, .btn-touch.active {
+            transform: scale(0.90) translateY(3px);
+            filter: brightness(1.2) drop-shadow(0 0 12px rgba(250, 204, 21, 0.8));
+        }
+
+        .btn-action-interact.pulse {
+            animation: interactGlow 0.9s infinite alternate;
+        }
+
+        @keyframes interactGlow {
+            0% { filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.4)); }
+            100% { filter: drop-shadow(0 0 18px rgba(250, 204, 21, 1)); }
+        }
+
+        @media (max-width: 600px) {
+            .btn-touch {
+                width: 56px;
+                height: 56px;
+            }
+        }
+
+        /* Cabin Interior & Homestead Tabs */
+        .cabin-container {
+            width: 100%;
+            max-width: 760px;
+            max-height: 85vh;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            overflow-y: auto;
+        }
+
+        .cabin-tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding-bottom: 8px;
+            justify-content: center;
+        }
+
+        .cabin-tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cabin-tab-btn.active, .cabin-tab-btn:hover {
+            background: rgba(168, 85, 247, 0.25);
+            border-color: rgba(168, 85, 247, 0.5);
+            color: #fff;
+        }
+
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 12px;
+            text-align: left;
+        }
+
+        .upgrade-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .upgrade-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 800;
+            color: #38bdf8;
+        }
+
+        .upgrade-card-desc {
+            font-size: 11px;
+            color: #94a3b8;
+            line-height: 1.35;
+        }
+
+        .upgrade-card-cost {
+            font-size: 11px;
+            color: #fbbf24;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .btn-upgrade {
+            background: #7c3aed;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: background-color 0.15s;
+        }
+        .btn-upgrade:hover {
+            background: #9333ea;
+        }
+
+        /* Inventory Grid */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .inventory-slot {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 10px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .inventory-slot svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .inventory-slot-name {
+            font-size: 11px;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .inventory-slot-qty {
+            font-size: 13px;
+            font-weight: 800;
+            color: #38bdf8;
+            font-family: monospace;
+        }
+
+        /* Dialogue Box Modal */
+        .dialogue-box {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 600px;
+            background: rgba(11, 15, 30, 0.95);
+            border: 2px solid var(--accent-purple);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
+            z-index: 60;
+        }
+
+        .dialogue-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            border: 2px solid var(--accent-purple);
+            background: #1e1b4b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .dialogue-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+            flex-grow: 1;
+        }
+
+        .dialogue-speaker {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--accent-purple);
+        }
+
+        .dialogue-text {
+            font-size: 13px;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        .keyboard-hint {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: rgba(226, 232, 240, 0.6);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 12px;
+            border-radius: 6px;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Accessibility & Wooden Settings Dialog */
+        .settings-card {
+            width: 100%;
+            max-width: 540px;
+            background: rgba(24, 18, 14, 0.96);
+            border: 3px solid #854d0e;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 10px 45px rgba(0, 0, 0, 0.95), inset 0 0 15px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(133, 77, 14, 0.6);
+            padding-bottom: 12px;
+        }
+
+        .settings-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #facc15;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        }
+
+        .settings-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(133, 77, 14, 0.4);
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+
+        .settings-row-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .settings-row-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #f1f5f9;
+        }
+
+        .settings-row-desc {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .btn-toggle-switch {
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid #64748b;
+            color: #94a3b8;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-toggle-switch.active {
+            background: #16a34a;
+            border-color: #4ade80;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.5);
+        }
+
+        .btn-wooden-action {
+            background: linear-gradient(180deg, #b45309 0%, #78350f 100%);
+            border: 2px solid #f59e0b;
+            color: #fff;
+            font-weight: 900;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+        .btn-wooden-action:hover {
+            transform: scale(1.04);
+            border-color: #fde047;
+        }
+
+        @media (min-width: 1024px) {
+            .mobile-controls {
+                opacity: 0.85;
+            }
+            .mobile-controls:hover {
+                opacity: 1;
+            }
+        }
+
+        /* Kaufland Supermarket Modal with Original PNG Artwork */
+        .kaufland-shop-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 6, 12, 0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 95;
+            padding: 8px;
+        }
+
+        .kaufland-png-frame {
+            position: relative;
+            width: 100%;
+            max-width: 780px;
+            aspect-ratio: 1024 / 682;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            box-shadow: 0 12px 45px rgba(0, 0, 0, 0.95);
+            overflow: hidden;
+        }
+
+        .kaufland-png-coins {
+            position: absolute;
+            top: 4.8%;
+            left: 6.8%;
+            font-size: clamp(11px, 2vw, 17px);
+            font-weight: 900;
+            color: #ffffff;
+            font-family: monospace;
+            text-shadow: 0 2px 4px #000;
+        }
+
+        .kaufland-png-exit {
+            position: absolute;
+            top: 2.8%;
+            right: 2.8%;
+            width: 11.5%;
+            height: 9.5%;
+            cursor: pointer;
+            border-radius: 4px;
+            background: transparent;
+            border: none;
+        }
+        .kaufland-png-exit:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .kaufland-png-grid {
+            position: absolute;
+            top: 36.5%;
+            left: 14.5%;
+            width: 71%;
+            height: 52%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 2%;
+        }
+
+        .kaufland-png-btn {
+            position: relative;
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 2%;
+            background: transparent;
+            border: none;
+            transition: transform 0.08s;
+        }
+        .kaufland-png-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: scale(1.03);
+        }
+        .kaufland-png-btn:active {
+            transform: scale(0.96);
+        }
+
+        .kaufland-png-inv-btn {
+            position: absolute;
+            bottom: 2.4%;
+            left: 2.2%;
+            width: 19%;
+            height: 8.5%;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+        }
+        .kaufland-png-inv-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .kaufland-png-cart-btn {
+            position: absolute;
+            bottom: 2.4%;
+            right: 2.2%;
+            width: 17%;
+            height: 8.5%;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+        }
+        .kaufland-png-cart-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+            align-items: center;
+            border-top: 2px solid #232a36;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .kaufland-bottom-btn {
+            background: #252c38;
+            border: 1px solid #3b4456;
+            color: #cbd5e1;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Fullscreen Half-Cut Diagonal Decision Screen */
+        .quick-event-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(3, 1, 10, 0.4);
+            backdrop-filter: blur(14px) brightness(0.65);
+            -webkit-backdrop-filter: blur(14px) brightness(0.65);
+            z-index: 100;
+            display: flex;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        .split-screen-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        .split-half-left {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px 24px;
+            cursor: pointer;
+            z-index: 5;
+            transition: transform 0.12s ease, filter 0.12s ease;
+            user-select: none;
+        }
+
+        .split-half-right {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px 24px;
+            cursor: pointer;
+            z-index: 5;
+            transition: transform 0.12s ease, filter 0.12s ease;
+            user-select: none;
+        }
+
+        .split-half-left:hover, .split-half-right:hover {
+            transform: scale(1.04);
+        }
+
+        .split-half-left:active, .split-half-right:active {
+            transform: scale(0.96);
+        }
+
+        .split-half-left.disabled, .split-half-right.disabled {
+            opacity: 0.45;
+            filter: grayscale(0.8);
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Diagonal Metallic Divider Beam */
+        .diagonal-divider {
+            position: absolute;
+            top: -60%;
+            left: 50%;
+            width: 28px;
+            height: 220%;
+            background: linear-gradient(90deg, #0f172a 0%, #475569 35%, #cbd5e1 50%, #475569 65%, #0f172a 100%);
+            border-left: 3px solid #020617;
+            border-right: 3px solid #020617;
+            box-shadow: 0 0 35px rgba(0, 0, 0, 0.95);
+            transform: translateX(-50%) rotate(26deg);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .diagonal-divider::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, #1e293b, #1e293b 16px, #94a3b8 16px, #94a3b8 32px);
+            opacity: 0.8;
+        }
+
+        .split-icon {
+            font-size: clamp(44px, 8vw, 68px);
+            margin-bottom: 8px;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.9));
+            animation: iconFloat 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes iconFloat {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-8px); }
+        }
+
+        .split-bubble-btn {
+            border: 3px solid #ffffff;
+            border-radius: 40px;
+            padding: 10px 24px;
+            font-size: clamp(16px, 3.2vw, 24px);
+            font-weight: 900;
+            color: #ffffff;
+            background: rgba(11, 15, 30, 0.7);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.7);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            max-width: 90%;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+            text-transform: uppercase;
+        }
+
+        .split-subtitle {
+            font-size: clamp(12px, 2.2vw, 16px);
+            font-weight: 700;
+            color: #f1f5f9;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+            max-width: 85%;
+            line-height: 1.3;
+        }
+
+        .split-timer-badge {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(11, 15, 30, 0.85);
+            border: 2px solid #38bdf8;
+            border-radius: 30px;
+            padding: 4px 16px;
+            font-size: 16px;
+            font-weight: 900;
+            font-family: monospace;
+            color: #38bdf8;
+            z-index: 20;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+        }
+</style>
+</head>
+<body>
+    <!-- Landscape Mode Orientation Warning -->
+    <div id="orientation-warning">
+        <div class="phone-rotate-icon">📱 ➔ 🔄</div>
+        <h2 style="color:#a855f7; margin-bottom:8px;">Please Rotate Your Device</h2>
+        <p style="color:#94a3b8; font-size:14px;">This pixel platformer is designed for Landscape Mode.</p>
+    </div>
+
+    <!-- Main Container -->
+    <div id="game-container">
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+        <!-- Top Resource HUD -->
+        <div class="hud-top-bar">
+            <!-- Resources & Level -->
+            <div class="hud-glass-card">
+                <div class="level-progress-card">
+                    <div class="level-header">
+                        <span id="player-level-text">LVL 1</span>
+                        <span id="player-xp-text">0/100 XP</span>
+                    </div>
+                    <div class="xp-bar-container">
+                        <div class="xp-bar-fill" id="player-xp-bar" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <div class="res-counter-group">
+                    <!-- Gold Coins -->
+                    <div class="res-item" title="Gold Coins">
+                        <svg viewBox="0 0 24 24" fill="#facc15"><circle cx="12" cy="12" r="9" stroke="#eab308" stroke-width="2"/><text x="12" y="16" font-size="12" font-weight="bold" fill="#78350f" text-anchor="middle">¢</text></svg>
+                        <span id="hud-coins">0</span>
+                    </div>
+                    <!-- Stamina / Energy -->
+                    <div class="res-item" title="Stamina">
+                        <svg viewBox="0 0 24 24" fill="#38bdf8"><polygon points="13,2 4,14 11,14 11,22 20,10 13,10" stroke="#0284c7" stroke-width="1.5"/></svg>
+                        <span id="hud-energy">100/100</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Zone / Subfloor Badge -->
+            <div id="hud-zone-badge" style="background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(8px); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 999px; padding: 6px 14px; font-size: 11px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+                <span>📍</span>
+                <span id="hud-zone-name">Zone 5101: Valley Surface Trail</span>
+            </div>
+
+            <!-- Quick Action Buttons & Status -->
+            <div style="display:flex; gap:8px; align-items:center;">
+                <div class="hud-quick-buttons">
+                    <button class="hud-btn-icon" id="btn-open-inventory" onclick="openInventory()" title="Backpack Inventory [I]">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    </button>
+                    <button class="hud-btn-icon" id="btn-open-quests" onclick="openQuests()" title="Active Quests [Q]">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </button>
+                    <button class="hud-btn-icon" id="btn-open-cabin-hud" onclick="enterCabinInterior()" title="Cabin Homestead">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    </button>
+                    <button class="hud-btn-icon" id="btn-toggle-audio" onclick="toggleAudio()" title="Sound / Mute">
+                        <svg id="svg-audio-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    </button>
+                    <button class="hud-btn-icon" id="btn-open-settings" onclick="openSettings()" title="Accessibility & Settings">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </button>
+                </div>
+
+                <div class="status-indicators">
+                    <div class="status-badge">
+                        <span class="status-lbl">Distance</span>
+                        <span class="status-val" id="distance-display" style="color:#38bdf8;">0m</span>
+                    </div>
+                    <div class="status-badge">
+                        <span class="status-lbl">Enci Dist</span>
+                        <span class="status-val" id="danger-meter" style="color:#ef4444;">300m</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Game Modal Screen -->
+        <div id="start-modal" class="game-modal">
+            <h1 class="game-title">Valley Expedition</h1>
+            <p class="game-subtitle">Forage timber & stones across scenic valley biomes, explore mountain cabins, complete quests, and upgrade your settlement before Enci catches up!</p>
+            <div class="menu-buttons">
+                <button id="btn-start-game" class="btn-action-primary" onclick="startGame()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    PLAY EXPEDITION
+                </button>
+                <button id="btn-open-base" class="btn-action-secondary" onclick="enterCabinInterior()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    CABIN HOMESTEAD
+                </button>
+            </div>
+        </div>
+
+        <!-- Cabin Interior & Homestead Screen -->
+        <div id="cabin-modal" class="game-modal hidden">
+            <div class="cabin-container">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="color:#38bdf8; font-size:22px; display:flex; align-items:center; gap:8px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                        VALLEY CABIN HOMESTEAD
+                    </h2>
+                    <button class="btn-action-secondary" style="padding:6px 16px; font-size:13px;" onclick="exitCabinInterior()">
+                        ✕ EXIT TO VALLEY
+                    </button>
+                </div>
+
+                <div class="cabin-tabs">
+                    <button class="cabin-tab-btn active" id="tab-upgrades" onclick="switchCabinTab('upgrades')">🛠 WORKBENCH UPGRADES</button>
+                    <button class="cabin-tab-btn" id="tab-inventory" onclick="switchCabinTab('inventory')">🎒 CHEST & INVENTORY</button>
+                    <button class="cabin-tab-btn" id="tab-quests" onclick="switchCabinTab('quests')">📜 EXPEDITION QUESTS</button>
+                    <button class="cabin-tab-btn" id="tab-marta" onclick="switchCabinTab('marta')">💬 TALK WITH MÁRTA</button>
+                </div>
+
+                <!-- Tab 1: Upgrades -->
+                <div id="cabin-tab-content-upgrades" class="upgrade-grid"></div>
+
+                <!-- Tab 2: Inventory -->
+                <div id="cabin-tab-content-inventory" class="inventory-grid hidden"></div>
+
+                <!-- Tab 3: Quests -->
+                <div id="cabin-tab-content-quests" style="display:flex; flex-direction:column; gap:10px;" class="hidden"></div>
+
+                <!-- Tab 4: Márta -->
+                <div id="cabin-tab-content-marta" class="hidden" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px;">
+                    <div class="dialogue-avatar">🧙‍♀️</div>
+                    <h3 style="color:#a855f7;">Márta the Scout</h3>
+                    <p style="color:#cbd5e1; max-width:480px; font-size:14px; line-height:1.5;">
+                        "Timi! Enci is relentless and speeding up with every passing zone. Make sure to craft speed boots and stamina upgrades at the workbench, and gather herbs to keep our energy full!"
+                    </p>
+                    <button class="btn-action-primary" style="padding:10px 24px; font-size:14px;" onclick="restAtHearth()">
+                        🔥 REST BY HEARTH (RESTORE ENERGY)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Modal (Quick Access) -->
+        <div id="inventory-modal" class="game-modal hidden">
+            <div class="cabin-container" style="max-width:550px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="color:#38bdf8; font-size:20px;">🎒 EXPEDITION BACKPACK</h2>
+                    <button class="btn-action-secondary" style="padding:4px 12px; font-size:12px;" onclick="closeInventory()">✕ CLOSE</button>
+                </div>
+                <div id="quick-inventory-grid" class="inventory-grid" style="margin-top:10px;"></div>
+            </div>
+        </div>
+
+        <!-- Quests Modal (Quick Access) -->
+        <div id="quests-modal" class="game-modal hidden">
+            <div class="cabin-container" style="max-width:550px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 style="color:#fbbf24; font-size:20px;">📜 ACTIVE EXPEDITION QUESTS</h2>
+                    <button class="btn-action-secondary" style="padding:4px 12px; font-size:12px;" onclick="closeQuests()">✕ CLOSE</button>
+                </div>
+                <div id="quick-quests-list" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;"></div>
+            </div>
+        </div>
+
+        <!-- Settings & Accessibility Modal -->
+        <div id="settings-modal" class="game-modal hidden">
+            <div class="settings-card">
+                <div class="settings-header">
+                    <div class="settings-title">
+                        <img src="assets/ui/icon_settings.png" style="width:26px; height:26px;" alt="">
+                        SETTINGS & ACCESSIBILITY
+                    </div>
+                    <button class="btn-wooden-action" onclick="closeSettings()" style="padding:4px 12px; font-size:12px;">✕ CLOSE</button>
+                </div>
+
+                <div class="settings-section">
+                    <!-- Audio Toggle -->
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <span class="settings-row-title">Game Audio & SFX</span>
+                            <span class="settings-row-desc">Master audio toggle for running, jumping & ambiance</span>
+                        </div>
+                        <button class="btn-toggle-switch active" id="setting-toggle-audio" onclick="toggleAudioSetting()">ON</button>
+                    </div>
+
+                    <!-- Touch Controls Size -->
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <span class="settings-row-title">Touch Controls Scale</span>
+                            <span class="settings-row-desc">Enlarge buttons for comfortable thumb grip</span>
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-wooden-action" onclick="setControlsScale(0.85)">Normal</button>
+                            <button class="btn-wooden-action" onclick="setControlsScale(1.15)">Large</button>
+                            <button class="btn-wooden-action" onclick="setControlsScale(1.35)">Extra Large</button>
+                        </div>
+                    </div>
+
+                    <!-- Button Opacity / Visibility -->
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <span class="settings-row-title">Button Contrast</span>
+                            <span class="settings-row-desc">Maximum visibility with glowing wooden borders</span>
+                        </div>
+                        <button class="btn-toggle-switch active" id="setting-high-contrast" onclick="toggleHighContrast()">HIGH</button>
+                    </div>
+
+                    <!-- Fullscreen Toggle -->
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <span class="settings-row-title">Fullscreen Mode</span>
+                            <span class="settings-row-desc">Fill entire screen for immersive mobile run</span>
+                        </div>
+                        <button class="btn-wooden-action" onclick="toggleFullscreen()">
+                            <img src="assets/ui/btn_fullscreen.png" style="width:20px; height:20px;" alt="">
+                            FULLSCREEN
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kaufland Supermarket Modal with Original PNG Artwork -->
+        <div id="kaufland-modal" class="kaufland-shop-modal hidden">
+            <div class="kaufland-png-frame">
+                <!-- Gold Coins Display in Top-Left -->
+                <div class="kaufland-png-coins" id="kaufland-coins-display">1,250</div>
+
+                <!-- Exit Button in Top-Right -->
+                <button class="kaufland-png-exit" onclick="KauflandShop.close()" title="Exit Store"></button>
+
+                <!-- Grid of 10 Item Buy Buttons matching PNG layout -->
+                <div class="kaufland-png-grid">
+                    <!-- Row 1: Red Bull, Coca-Cola, Pepsi, Sprite, Milka -->
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('red_bull')" title="Red Bull (250 Gold) - +60 Max Energy & Sprint"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('coca_cola')" title="Coca Cola (120 Gold) - +30 Energy"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('pepsi')" title="Pepsi (120 Gold) - +30 Energy"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('sprite')" title="Sprite (120 Gold) - +30 Energy Refresh"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('milka')" title="Milka (180 Gold) - +50 Player XP"></div>
+
+                    <!-- Row 2: Snickers, KitKat, Bounty, Kinder Bueno, Lay's -->
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('snickers')" title="Snickers (160 Gold) - +45 Energy & Stamina"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('kitkat')" title="KitKat (160 Gold) - +40 Energy"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('bounty')" title="Bounty (160 Gold) - +40 Player XP"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('kinder_bueno')" title="Kinder Bueno (180 Gold) - +50 Energy Boost"></div>
+                    <div class="kaufland-png-btn" onclick="KauflandShop.buy('lays')" title="Lay's (150 Gold) - +20 Sprint Speed"></div>
+                </div>
+
+                <!-- Bottom Bar Buttons -->
+                <button class="kaufland-png-inv-btn" onclick="openInventory()" title="Open Inventory"></button>
+                <button class="kaufland-png-cart-btn" onclick="KauflandShop.showCartInfo()" title="View Cart"></button>
+            </div>
+        </div>
+
+        <div id="quick-event-modal" class="game-modal quick-event-modal hidden">
+            <div class="split-screen-container">
+                <div class="split-timer-badge" id="qe-timer-text">7.0s</div>
+                <div class="diagonal-divider"></div>
+
+                <!-- Left Half Choice -->
+                <div class="split-half-left" id="qe-left-choice" onclick="QuickEventManager.handleChoiceClick(0)">
+                    <div class="split-icon" id="qe-left-icon">🏃</div>
+                    <div class="split-bubble-btn" id="qe-left-title">FUSS?</div>
+                    <div class="split-subtitle" id="qe-left-sub">gyors, de kockázatos</div>
+                </div>
+
+                <!-- Right Half Choice -->
+                <div class="split-half-right" id="qe-right-choice" onclick="QuickEventManager.handleChoiceClick(1)">
+                    <div class="split-icon" id="qe-right-icon">🛠️</div>
+                    <div class="split-bubble-btn" id="qe-right-title">javítsd meg a hidat</div>
+                    <div class="split-subtitle" id="qe-right-sub">lassú, de biztonságos</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Touch Controls with High-Visibility Vector Icons -->
+        <div class="mobile-controls">
+            <div class="dpad">
+                <div class="btn-touch" id="btn-left" title="Move Left">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </div>
+                <div class="btn-touch" id="btn-right" title="Move Right">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <div class="btn-touch btn-action-interact" id="btn-interact" title="Interact / Harvest / Enter">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span style="position:absolute; bottom:4px; font-size:10px; font-weight:900; color:#ffffff;">E</span>
+                </div>
+                <div class="btn-touch btn-action-run" id="btn-run" title="Sprint Boost">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    <span style="position:absolute; bottom:4px; font-size:9px; font-weight:900; color:#fbbf24;">RUN</span>
+                </div>
+                <div class="btn-touch btn-action-jump" id="btn-jump" title="Jump">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="keyboard-hint">
+            [A/D or ◄/►] Move &bull; [Space/W/▲] Jump &bull; [Shift/J] Sprint &bull; [E] Interact &bull; [I] Bag &bull; [Q] Quests
+        </div>
+    </div>
+
+    <script src="game.js?v=1.3.2"></script>
+</body>
+</html>

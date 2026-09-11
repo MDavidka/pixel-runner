@@ -1,0 +1,96 @@
+{
+  "char1": {
+    "idle": [
+      "char1_idle_0.png",
+      "char1_idle_1.png",
+      "char1_idle_2.png",
+      "char1_idle_3.png"
+    ],
+    "walk": [
+      "char1_walk_0.png",
+      "char1_walk_1.png",
+      "char1_walk_2.png",
+      "char1_walk_3.png",
+      "char1_walk_4.png",
+      "char1_walk_5.png",
+      "char1_walk_6.png",
+      "char1_walk_7.png",
+      "char1_walk_8.png",
+      "char1_walk_9.png"
+    ],
+    "run": [
+      "char1_run_0.png",
+      "char1_run_1.png",
+      "char1_run_2.png",
+      "char1_run_3.png",
+      "char1_run_4.png",
+      "char1_run_5.png",
+      "char1_run_6.png",
+      "char1_run_7.png",
+      "char1_run_8.png",
+      "char1_run_9.png"
+    ],
+    "jump": [
+      "char1_jump_0.png",
+      "char1_jump_1.png",
+      "char1_jump_2.png",
+      "char1_jump_3.png",
+      "char1_jump_4.png",
+      "char1_jump_5.png"
+    ],
+    "dead": [
+      "char1_dead_0.png",
+      "char1_dead_1.png",
+      "char1_dead_2.png",
+      "char1_dead_3.png"
+    ],
+    "hurt": [
+      "char1_hurt_0.png",
+      "char1_hurt_1.png",
+      "char1_hurt_2.png"
+    ]
+  },
+  "char2": {
+    "idle": [
+      "char2_idle_0.png",
+      "char2_idle_1.png",
+      "char2_idle_2.png",
+      "char2_idle_3.png"
+    ],
+    "walk": [
+      "char2_walk_0.png",
+      "char2_walk_1.png",
+      "char2_walk_2.png",
+      "char2_walk_3.png",
+      "char2_walk_4.png",
+      "char2_walk_5.png",
+      "char2_walk_6.png",
+      "char2_walk_7.png"
+    ],
+    "run": [
+      "char2_run_0.png",
+      "char2_run_1.png",
+      "char2_run_2.png",
+      "char2_run_3.png",
+      "char2_run_4.png",
+      "char2_run_5.png",
+      "char2_run_6.png",
+      "char2_run_7.png"
+    ],
+    "jump": [
+      "char2_jump_0.png",
+      "char2_jump_1.png"
+    ],
+    "dead": [
+      "char2_dead_0.png",
+      "char2_dead_1.png",
+      "char2_dead_2.png",
+      "char2_dead_3.png",
+      "char2_dead_4.png",
+      "char2_dead_5.png"
+    ],
+    "hurt": [
+      "char2_hurt_0.png"
+    ]
+  }
+}

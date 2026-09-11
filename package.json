@@ -1,0 +1,15 @@
+{
+  "name": "pixel-runner",
+  "version": "1.0.0",
+  "description": "Phaser 3 Pixel Valley Runner",
+  "main": "server.js",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "phaser": "^3.88.2",
+    "typescript": "^5.8.2"
+  }
+}
