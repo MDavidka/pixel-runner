@@ -41,6 +41,34 @@ export class PreloadScene extends Phaser.Scene {
         this.load.image('char1_sheet', `assets/char1_sheet.png?v=${vKey}`);
         this.load.image('enci_sheet', `assets/enci_sheet.png?v=${vKey}`);
         this.load.image('background', `assets/background.png?v=${vKey}`);
+
+        // Load individual sprite frames for char1, char2, and enci
+        // char1
+        for (let i = 0; i <= 5; i++) this.load.image(`char1_dead_${i}`, `assets/sprites/char1_dead_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 3; i++) this.load.image(`char1_idle_${i}`, `assets/sprites/char1_idle_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 7; i++) this.load.image(`char1_run_${i}`, `assets/sprites/char1_run_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 7; i++) this.load.image(`char1_walk_${i}`, `assets/sprites/char1_walk_${i}.png?v=${vKey}`);
+        this.load.image('char1_main_pose', `assets/sprites/char1_main_pose.png?v=${vKey}`);
+
+        // char2
+        for (let i = 0; i <= 3; i++) this.load.image(`char2_dead_${i}`, `assets/sprites/char2_dead_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 5; i++) this.load.image(`char2_face_${i}`, `assets/sprites/char2_face_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 2; i++) this.load.image(`char2_hurt_${i}`, `assets/sprites/char2_hurt_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 3; i++) this.load.image(`char2_idle_${i}`, `assets/sprites/char2_idle_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 6; i++) this.load.image(`char2_jump_${i}`, `assets/sprites/char2_jump_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 9; i++) this.load.image(`char2_run_${i}`, `assets/sprites/char2_run_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 9; i++) this.load.image(`char2_walk_${i}`, `assets/sprites/char2_walk_${i}.png?v=${vKey}`);
+        this.load.image('char2_main_pose', `assets/sprites/char2_main_pose.png?v=${vKey}`);
+
+        // enci
+        for (let i = 0; i <= 5; i++) this.load.image(`enci_dead_${i}`, `assets/sprites/enci_dead_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 5; i++) this.load.image(`enci_face_${i}`, `assets/sprites/enci_face_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 3; i++) this.load.image(`enci_hurt_${i}`, `assets/sprites/enci_hurt_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 7; i++) this.load.image(`enci_idle_${i}`, `assets/sprites/enci_idle_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 3; i++) this.load.image(`enci_jump_${i}`, `assets/sprites/enci_jump_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 7; i++) this.load.image(`enci_run_${i}`, `assets/sprites/enci_run_${i}.png?v=${vKey}`);
+        for (let i = 0; i <= 7; i++) this.load.image(`enci_walk_${i}`, `assets/sprites/enci_walk_${i}.png?v=${vKey}`);
+        this.load.image('enci_main_pose', `assets/sprites/enci_main_pose.png?v=${vKey}`);
     }
 
     create(): void {
@@ -166,46 +194,46 @@ export class PreloadScene extends Phaser.Scene {
     }
 
     private createAnimations(): void {
-        // Timi Animations (char2)
+        const createAnim = (key: string, prefix: string, count: number, frameRate: number, repeat: number = -1) => {
+            const frames = [];
+            for (let i = 0; i < count; i++) {
+                frames.push({ key: `${prefix}_${i}` });
+            }
+            this.anims.create({ key, frames, frameRate, repeat });
+        };
+
+        // Lina Animations (char1)
+        createAnim('char1_idle', 'char1_idle', 4, 6);
+        createAnim('char1_walk', 'char1_walk', 8, 8);
+        createAnim('char1_run', 'char1_run', 8, 12);
+        createAnim('char1_dead', 'char1_dead', 6, 8, 0);
         this.anims.create({
-            key: 'char2_idle',
-            frames: [{ key: 'char2_sheet' }],
+            key: 'char1_jump',
+            frames: [{ key: 'char1_run_2' }, { key: 'char1_run_3' }],
             frameRate: 6,
             repeat: -1
         });
         this.anims.create({
-            key: 'char2_run',
-            frames: [{ key: 'char2_sheet' }],
-            frameRate: 12,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'char2_jump',
-            frames: [{ key: 'char2_sheet' }],
-            frameRate: 1,
-            repeat: -1
+            key: 'char1_hurt',
+            frames: [{ key: 'char1_dead_0' }],
+            frameRate: 6,
+            repeat: 0
         });
 
-        // Lina Animations (char1)
-        this.anims.create({
-            key: 'char1_run',
-            frames: [{ key: 'char1_sheet' }],
-            frameRate: 12,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'char1_jump',
-            frames: [{ key: 'char1_sheet' }],
-            frameRate: 1,
-            repeat: -1
-        });
+        // Timi Animations (char2)
+        createAnim('char2_idle', 'char2_idle', 4, 6);
+        createAnim('char2_walk', 'char2_walk', 10, 8);
+        createAnim('char2_run', 'char2_run', 10, 12);
+        createAnim('char2_jump', 'char2_jump', 7, 10, 0);
+        createAnim('char2_hurt', 'char2_hurt', 3, 8, 0);
+        createAnim('char2_dead', 'char2_dead', 4, 8, 0);
 
         // Enci Animations
-        this.anims.create({
-            key: 'enci_run',
-            frames: [{ key: 'enci_sheet' }],
-            frameRate: 12,
-            repeat: -1
-        });
+        createAnim('enci_idle', 'enci_idle', 8, 6);
+        createAnim('enci_walk', 'enci_walk', 8, 8);
+        createAnim('enci_run', 'enci_run', 8, 12);
+        createAnim('enci_jump', 'enci_jump', 4, 10, 0);
+        createAnim('enci_hurt', 'enci_hurt', 4, 8, 0);
+        createAnim('enci_dead', 'enci_dead', 6, 8, 0);
     }
 }
