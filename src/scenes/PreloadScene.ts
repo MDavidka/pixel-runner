@@ -194,46 +194,30 @@ export class PreloadScene extends Phaser.Scene {
     }
 
     private createAnimations(): void {
-        const createAnim = (key: string, prefix: string, count: number, frameRate: number, repeat: number = -1) => {
-            const frames = [];
-            for (let i = 0; i < count; i++) {
-                frames.push({ key: `${prefix}_${i}` });
-            }
-            this.anims.create({ key, frames, frameRate, repeat });
+        const createAnimation = (key: string, prefix: string, frameCount: number, frameRate: number, repeat = -1): void => {
+            if (this.anims.exists(key)) return;
+            const frames = Array.from({ length: frameCount }, (_, index) => ({ key: `${prefix}_${index}` }));
+            this.anims.create({ key, frames, frameRate, repeat, yoyo: false });
         };
 
-        // Lina Animations (char1)
-        createAnim('char1_idle', 'char1_idle', 4, 6);
-        createAnim('char1_walk', 'char1_walk', 8, 8);
-        createAnim('char1_run', 'char1_run', 8, 12);
-        createAnim('char1_dead', 'char1_dead', 6, 8, 0);
-        this.anims.create({
-            key: 'char1_jump',
-            frames: [{ key: 'char1_run_2' }, { key: 'char1_run_3' }],
-            frameRate: 6,
-            repeat: -1
-        });
-        this.anims.create({
-            key: 'char1_hurt',
-            frames: [{ key: 'char1_dead_0' }],
-            frameRate: 6,
-            repeat: 0
-        });
+        const createMovementSet = (character: string, counts: { idle: number; walk: number; run: number }): void => {
+            createAnimation(`${character}_idle`, `${character}_idle`, counts.idle, 6);
+            createAnimation(`${character}_walk`, `${character}_walk`, counts.walk, 8);
+            createAnimation(`${character}_run`, `${character}_run`, counts.run, 12);
+        };
 
-        // Timi Animations (char2)
-        createAnim('char2_idle', 'char2_idle', 4, 6);
-        createAnim('char2_walk', 'char2_walk', 10, 8);
-        createAnim('char2_run', 'char2_run', 10, 12);
-        createAnim('char2_jump', 'char2_jump', 7, 10, 0);
-        createAnim('char2_hurt', 'char2_hurt', 3, 8, 0);
-        createAnim('char2_dead', 'char2_dead', 4, 8, 0);
+        const createActionSet = (character: string, counts: { jump: number; hurt: number; dead: number }): void => {
+            createAnimation(`${character}_jump`, `${character}_jump`, counts.jump, 10, 0);
+            createAnimation(`${character}_hurt`, `${character}_hurt`, counts.hurt, 8, 0);
+            createAnimation(`${character}_dead`, `${character}_dead`, counts.dead, 8, 0);
+        };
 
-        // Enci Animations
-        createAnim('enci_idle', 'enci_idle', 8, 6);
-        createAnim('enci_walk', 'enci_walk', 8, 8);
-        createAnim('enci_run', 'enci_run', 8, 12);
-        createAnim('enci_jump', 'enci_jump', 4, 10, 0);
-        createAnim('enci_hurt', 'enci_hurt', 4, 8, 0);
-        createAnim('enci_dead', 'enci_dead', 6, 8, 0);
+        // Every numbered asset in sprites_manifest.json is included in its animation.
+        createMovementSet('char1', { idle: 4, walk: 8, run: 8 });
+        createActionSet('char1', { jump: 2, hurt: 1, dead: 6 });
+        createMovementSet('char2', { idle: 4, walk: 10, run: 10 });
+        createActionSet('char2', { jump: 7, hurt: 3, dead: 4 });
+        createMovementSet('enci', { idle: 8, walk: 8, run: 8 });
+        createActionSet('enci', { jump: 4, hurt: 4, dead: 6 });
     }
 }

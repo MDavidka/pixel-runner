@@ -12,6 +12,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private nameplate: Phaser.GameObjects.Text;
     private dustEmitter: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
     private audioSystem: AudioSystem;
+    private actionAnimation: string | null = null;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
         super(scene, x, y, 'char2_run_0');
@@ -19,6 +20,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
 
         this.audioSystem = AudioSystem.getInstance();
+        this.on(Phaser.Animations.Events.ANIMATION_COMPLETE, (animation: Phaser.Animations.Animation) => {
+            if (animation.key === this.actionAnimation) this.actionAnimation = null;
+        });
 
         // Physics body setup
         this.setCollideWorldBounds(false);
@@ -127,15 +131,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Jump controller update
         this.jumpController.update(dt, isJumpPressed, isJumpJustDown, isJumpReleased);
 
-        // Update Animation
-        if (!isGrounded) {
-            if (this.anims.currentAnim?.key !== 'char2_jump') {
-                this.play('char2_jump', true);
-            }
-        } else {
-            if (this.anims.currentAnim?.key !== 'char2_run') {
-                this.play('char2_run', true);
-            }
+        // Keep one-shot actions visible until their final frame, then resume movement.
+        if (!this.actionAnimation) {
+            const nextAnimation = isGrounded ? 'char2_run' : 'char2_jump';
+            if (this.anims.currentAnim?.key !== nextAnimation) this.play(nextAnimation, true);
         }
 
         // Invulnerability flicker
@@ -157,7 +156,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.isInvulnerable = true;
         this.invulnTimer = 1.2; // 1.2s invulnerability
         this.audioSystem.play('hit');
-        this.play('char2_hurt', true);
+        this.actionAnimation = 'char2_hurt';
+        this.play(this.actionAnimation, true);
         this.setVelocityX(this.baseSpeed * 0.4); // brief speed loss
     }
 
