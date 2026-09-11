@@ -4,7 +4,7 @@ export class Companion extends Phaser.Physics.Arcade.Sprite {
     private nameplate: Phaser.GameObjects.Text;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
-        super(scene, x, y, 'char1_sheet');
+        super(scene, x, y, 'char1_run_0');
         scene.add.existing(this);
         scene.physics.add.existing(this);
 

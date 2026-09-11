@@ -7,7 +7,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private auraGlow: Phaser.GameObjects.Graphics;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
-        super(scene, x, y, 'enci_sheet');
+        super(scene, x, y, 'enci_run_0');
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
@@ -54,8 +54,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             this.setVelocityY(-510);
         }
 
-        if (this.anims.currentAnim?.key !== 'enci_run') {
-            this.play('enci_run', true);
+        if (!isGrounded) {
+            if (this.anims.currentAnim?.key !== 'enci_jump') {
+                this.play('enci_jump', true);
+            }
+        } else {
+            if (this.anims.currentAnim?.key !== 'enci_run') {
+                this.play('enci_run', true);
+            }
         }
 
         // Dark red menacing aura
