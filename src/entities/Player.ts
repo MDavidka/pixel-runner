@@ -14,7 +14,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private audioSystem: AudioSystem;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
-        super(scene, x, y, 'char2_run_0');
+        super(scene, x, y, 'char2_sheet');
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
@@ -157,7 +157,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.isInvulnerable = true;
         this.invulnTimer = 1.2; // 1.2s invulnerability
         this.audioSystem.play('hit');
-        this.play('char2_hurt', true);
         this.setVelocityX(this.baseSpeed * 0.4); // brief speed loss
     }
 

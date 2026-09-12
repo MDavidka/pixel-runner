@@ -278,31 +278,39 @@
         }
     }
 
-    // ============================================================================
+        // ============================================================================
     // 3. SPRITES & ANIMATION MATRICES
     // ============================================================================
+    const vKey = "1.3.2";
     const assets = {
-        timi: new Image(),
-        marta: new Image(),
-        enci: new Image(),
-        char_idle: new Image(),
-        char_walk1: new Image(),
-        char_walk2: new Image(),
         school_start: new Image(),
         kaufland: new Image(),
         modern_bridge: new Image(),
         tree_oak_lush: new Image(),
         tree_pine_lush: new Image(),
         tree_slender: new Image(),
-        valley_panorama: new Image()
+        valley_panorama: new Image(),
+        // Timi (char2)
+        char2_idle: [],
+        char2_walk: [],
+        char2_run: [],
+        char2_jump: [],
+        char2_hurt: [],
+        char2_dead: [],
+        // Márta (char1)
+        char1_idle: [],
+        char1_walk: [],
+        char1_run: [],
+        char1_dead: [],
+        // Enci
+        enci_idle: [],
+        enci_walk: [],
+        enci_run: [],
+        enci_jump: [],
+        enci_hurt: [],
+        enci_dead: []
     };
-    const vKey = "1.3.1";
-    assets.timi.src = "assets/char2_sheet.png?v=" + vKey;
-    assets.marta.src = "assets/char1_sheet.png?v=" + vKey;
-    assets.enci.src = "assets/enci_sheet.png?v=" + vKey;
-    assets.char_idle.src = "assets/char_idle_clean.png?v=" + vKey;
-    assets.char_walk1.src = "assets/char_walk1_clean.png?v=" + vKey;
-    assets.char_walk2.src = "assets/char_walk2_clean.png?v=" + vKey;
+
     assets.school_start.src = "assets/buildings/school_start.png?v=" + vKey;
     assets.kaufland.src = "assets/buildings/kaufland.png?v=" + vKey;
     assets.modern_bridge.src = "assets/buildings/modern_bridge.png?v=" + vKey;
@@ -311,24 +319,34 @@
     assets.tree_slender.src = "assets/buildings/tree_slender.png?v=" + vKey;
     assets.valley_panorama.src = "assets/valley_panorama.png?v=" + vKey;
 
-    const TIMI_ANIMS = {
-        idle: [[39, 28, 68, 167], [152, 28, 69, 167], [271, 27, 66, 168], [388, 27, 65, 168]],
-        walk: [[32, 223, 93, 162], [152, 220, 90, 165], [276, 220, 91, 165], [405, 220, 91, 165]],
-        run: [[24, 414, 91, 146], [136, 410, 109, 147], [259, 410, 108, 150], [387, 408, 99, 152], [514, 408, 96, 152], [648, 410, 83, 150], [760, 409, 111, 151], [884, 410, 107, 150]],
-        jump: [[514, 408, 96, 152], [648, 410, 83, 150]]
-    };
+    function loadAnimFrames(targetArr, prefix, count) {
+        for (let i = 0; i < count; i++) {
+            const img = new Image();
+            img.src = "assets/sprites/" + prefix + "_" + i + ".png?v=" + vKey;
+            targetArr.push(img);
+        }
+    }
 
-    const MARTA_ANIMS = {
-        idle: [[10, 35, 75, 160], [85, 35, 75, 160], [160, 35, 75, 160]],
-        run: [[10, 220, 98, 165], [108, 220, 98, 165], [206, 220, 98, 165], [304, 220, 98, 165], [402, 220, 98, 165], [500, 220, 98, 165], [598, 220, 98, 165], [696, 220, 98, 165]],
-        jump: [[155, 400, 80, 155], [235, 400, 80, 155]]
-    };
+    loadAnimFrames(assets.char2_idle, "char2_idle", 4);
+    loadAnimFrames(assets.char2_walk, "char2_walk", 10);
+    loadAnimFrames(assets.char2_run, "char2_run", 10);
+    loadAnimFrames(assets.char2_jump, "char2_jump", 7);
+    loadAnimFrames(assets.char2_hurt, "char2_hurt", 3);
+    loadAnimFrames(assets.char2_dead, "char2_dead", 4);
 
-    const ENCI_ANIMS = {
-        run: [[170, 375, 85, 115], [260, 375, 85, 115], [350, 375, 85, 115], [435, 375, 95, 115], [530, 375, 95, 115], [630, 375, 95, 115], [740, 375, 105, 115], [840, 375, 140, 115]]
-    };
+    loadAnimFrames(assets.char1_idle, "char1_idle", 4);
+    loadAnimFrames(assets.char1_walk, "char1_walk", 8);
+    loadAnimFrames(assets.char1_run, "char1_run", 8);
+    loadAnimFrames(assets.char1_dead, "char1_dead", 6);
 
-    // ============================================================================
+    loadAnimFrames(assets.enci_idle, "enci_idle", 8);
+    loadAnimFrames(assets.enci_walk, "enci_walk", 8);
+    loadAnimFrames(assets.enci_run, "enci_run", 8);
+    loadAnimFrames(assets.enci_jump, "enci_jump", 4);
+    loadAnimFrames(assets.enci_hurt, "enci_hurt", 4);
+    loadAnimFrames(assets.enci_dead, "enci_dead", 6);
+
+// ============================================================================
     // 4. PRE-RENDERED VECTOR/PIXEL ASSET LIBRARY (EnvLibrary)
     // ============================================================================
     const EnvLibrary = {
@@ -2707,6 +2725,7 @@
         state: "idle",
         frameIndex: 0,
         frameTimer: 0,
+        hurtTimer: 0,
 
         reset() {
             this.x = 300;
@@ -2718,6 +2737,7 @@
             this.state = "idle";
             this.frameIndex = 0;
             this.frameTimer = 0;
+            this.hurtTimer = 0;
         },
 
         queueJump() {
@@ -2749,67 +2769,57 @@
                         onLadder = true;
                         if (input.up || (input.jump && this.y > l.y + 12)) {
                             this.climbing = true;
-                            this.vy = -185;
+                            this.vy = -180;
                             this.vx = 0;
-                            this.x = l.x + l.w / 2;
-                            if (Math.random() < 0.12) playSound("ladder");
-                        } else if (input.down && this.y < l.y + l.h) {
+                            if (this.y <= l.y + 4) {
+                                this.climbing = false;
+                                this.y = l.y;
+                            }
+                        } else if (input.down) {
                             this.climbing = true;
-                            this.vy = 175;
+                            this.vy = 180;
                             this.vx = 0;
-                            this.x = l.x + l.w / 2;
                         } else if (this.climbing) {
-                            this.vy = 0; // Hold grip on ladder rungs
-                        }
-
-                        // Reached ladder top
-                        if (this.climbing && this.y <= l.y + 4) {
-                            this.y = l.y;
                             this.vy = 0;
-                            this.climbing = false;
-                            this.grounded = true;
+                            this.vx = 0;
                         }
-                        break;
                     }
                 }
-                if (onLadder) break;
             }
-            if (!onLadder) {
-                this.climbing = false;
-            }
-
-            // Snappy Horizontal Movement & Acceleration
-            let targetVx = 0;
-            if (input.left) {
-                targetVx = -targetSpeed * 0.88;
-                this.facing = -1;
-            } else if (input.right) {
-                targetVx = targetSpeed;
-                this.facing = 1;
-            }
+            if (!onLadder) this.climbing = false;
 
             if (!this.climbing) {
-                const accelRate = this.grounded ? 22 : 14;
-                this.vx += (targetVx - this.vx) * Math.min(1, dt * accelRate);
-            }
+                const accel = 1800;
 
-            // Coyote Time
-            if (this.grounded) {
-                this.coyoteTimer = 0.15;
-            } else {
-                this.coyoteTimer = Math.max(0, this.coyoteTimer - dt);
-            }
+                if (input.left) {
+                    this.vx = Math.max(this.vx - accel * dt, -targetSpeed * 0.6);
+                    this.facing = -1;
+                } else if (input.right) {
+                    this.vx = Math.min(this.vx + accel * dt, targetSpeed * 1.15);
+                    this.facing = 1;
+                } else {
+                    this.vx = targetSpeed;
+                    this.facing = 1;
+                }
 
-            // Jump Execution
-            if (this.jumpBufferTimer > 0) {
-                this.jumpBufferTimer -= dt;
-                if (this.coyoteTimer > 0 || this.climbing) {
-                    const jumpBonus = (SaveData.upgrades.jumpLevel - 1) * 20;
-                    let baseJump = -510;
-                    if (currentBiome.isMoon) baseJump = -440; // Lunar leap
-                    else if (currentBiome.id === "flying") baseJump = -360;
-                    else if (currentBiome.id === "swimming") baseJump = -380;
-                    this.vy = baseJump - jumpBonus;
+                // Coyote time & Jump buffering
+                if (this.grounded) {
+                    this.coyoteTimer = 0.12;
+                } else {
+                    this.coyoteTimer -= dt;
+                }
+
+                if (this.jumpBufferTimer > 0) {
+                    this.jumpBufferTimer -= dt;
+                }
+
+                if ((input.jump || this.jumpBufferTimer > 0) && (this.coyoteTimer > 0 || onLadder)) {
+                    const jumpBonus = (SaveData.upgrades.jumpLevel - 1) * 0.08;
+                    let jumpImpulse = currentBiome.isMoon ? -580 : (-490 * (1.0 + jumpBonus));
+                    if (currentBiome.isFlying) jumpImpulse *= 1.25;
+                    if (currentBiome.isSwimming) jumpImpulse *= 0.75;
+
+                    this.vy = jumpImpulse;
                     this.grounded = false;
                     this.climbing = false;
                     this.coyoteTimer = 0;
@@ -2839,7 +2849,6 @@
                 for (const p of chunk.platforms) {
                     let platY = p.y;
                     if (p.isLevitating) {
-                        // Smooth sine wave float for levitating blocks
                         platY = (p.initY || p.y) + Math.sin(performance.now() * 0.003 + p.x * 0.01) * 7;
                         p.y = platY;
                     }
@@ -2866,23 +2875,60 @@
                 this.grounded = true;
             }
 
-            // Animation State
-            if (this.climbing) {
+            // Hurt Timer
+            if (this.hurtTimer > 0) {
+                this.hurtTimer -= dt;
+            }
+
+            // Animation State Determination
+            if (gameState === "GAMEOVER") {
+                this.state = "dead";
+            } else if (this.hurtTimer > 0) {
+                this.state = "hurt";
+            } else if (this.climbing) {
                 this.state = "climb";
             } else if (!this.grounded) {
                 this.state = "jump";
+            } else if (Math.abs(this.vx) > 250) {
+                this.state = "sprint";
             } else if (Math.abs(this.vx) > 8) {
                 this.state = "run";
             } else {
                 this.state = "idle";
             }
 
+            // Frame Animation Update
             this.frameTimer += dt;
-            const runFrames = [assets.char_walk1, assets.char_walk2];
-            const speedFactor = this.state === "run" ? (input.run ? 0.11 : 0.15) : 0.25;
-            if (this.frameTimer >= speedFactor) {
+            let activeAnimFrames = assets.char2_run;
+            let frameRate = 0.08;
+
+            if (this.state === "dead") {
+                activeAnimFrames = assets.char2_dead;
+                frameRate = 0.12;
+            } else if (this.state === "hurt") {
+                activeAnimFrames = assets.char2_hurt;
+                frameRate = 0.10;
+            } else if (this.state === "jump") {
+                activeAnimFrames = assets.char2_jump;
+                frameRate = 0.08;
+            } else if (this.state === "sprint") {
+                activeAnimFrames = assets.char2_run;
+                frameRate = 0.05;
+            } else if (this.state === "run") {
+                activeAnimFrames = assets.char2_walk;
+                frameRate = 0.08;
+            } else if (this.state === "idle") {
+                activeAnimFrames = assets.char2_idle;
+                frameRate = 0.15;
+            }
+
+            if (this.frameTimer >= frameRate) {
                 this.frameTimer = 0;
-                this.frameIndex = (this.frameIndex + 1) % 2;
+                if (this.state === "dead") {
+                    this.frameIndex = Math.min(this.frameIndex + 1, activeAnimFrames.length - 1);
+                } else {
+                    this.frameIndex = (this.frameIndex + 1) % activeAnimFrames.length;
+                }
             }
 
             // Magnet Loot Vacuum
@@ -2934,20 +2980,15 @@
             const screenX = this.x - camX;
             const screenY = this.y;
 
-            // Select active frame
-            let curImg = assets.char_idle;
-            if (this.state === "climb") {
-                curImg = (Math.floor(performance.now() / 160) % 2 === 0) ? assets.char_walk1 : assets.char_walk2;
-            } else if (this.state === "run") {
-                curImg = this.frameIndex === 0 ? assets.char_walk1 : assets.char_walk2;
-            } else if (this.state === "jump") {
-                curImg = assets.char_walk2;
-            }
+            let activeAnimFrames = assets.char2_run;
+            if (this.state === "dead") activeAnimFrames = assets.char2_dead;
+            else if (this.state === "hurt") activeAnimFrames = assets.char2_hurt;
+            else if (this.state === "jump") activeAnimFrames = assets.char2_jump;
+            else if (this.state === "sprint") activeAnimFrames = assets.char2_run;
+            else if (this.state === "run") activeAnimFrames = assets.char2_walk;
+            else if (this.state === "idle") activeAnimFrames = assets.char2_idle;
 
-            // High resolution render height
-            const renderH = 92;
-            const imgAspect = curImg.naturalWidth && curImg.naturalHeight ? (curImg.naturalWidth / curImg.naturalHeight) : 0.55;
-            const renderW = renderH * imgAspect;
+            const curImg = activeAnimFrames[this.frameIndex % activeAnimFrames.length] || assets.char2_run[0];
 
             // Soft Shadow
             ctx.save();
@@ -2958,6 +2999,10 @@
             ctx.restore();
 
             if (curImg && curImg.complete && curImg.naturalWidth > 0) {
+                const renderH = 92;
+                const imgAspect = curImg.naturalWidth / curImg.naturalHeight;
+                const renderW = renderH * imgAspect;
+
                 ctx.save();
                 ctx.translate(screenX, screenY);
                 if (this.facing < 0) {
@@ -2967,7 +3012,7 @@
                 ctx.restore();
             }
 
-            drawNameplate(screenX, screenY - renderH - 8, "Timi", "#38bdf8");
+                        drawNameplate(screenX, screenY - 98, "Timi", "#38bdf8");
         }
     };
 
@@ -2985,6 +3030,8 @@
             this.y = GROUND_Y;
             this.vx = 0;
             this.vy = 0;
+            this.frameIndex = 0;
+            this.frameTimer = 0;
         },
 
         update(dt) {
@@ -2995,18 +3042,26 @@
             this.y = player.y;
 
             this.frameTimer += dt;
-            const animArray = Math.abs(this.vx) > 10 ? MARTA_ANIMS.run : MARTA_ANIMS.idle;
-            if (this.frameTimer >= 0.09) {
+            const isMoving = Math.abs(this.vx) > 10;
+            const animFrames = gameState === "GAMEOVER" ? assets.char1_dead : (isMoving ? assets.char1_run : assets.char1_idle);
+            const frameRate = isMoving ? 0.08 : 0.15;
+
+            if (this.frameTimer >= frameRate) {
                 this.frameTimer = 0;
-                this.frameIndex = (this.frameIndex + 1) % animArray.length;
+                if (gameState === "GAMEOVER") {
+                    this.frameIndex = Math.min(this.frameIndex + 1, animFrames.length - 1);
+                } else {
+                    this.frameIndex = (this.frameIndex + 1) % animFrames.length;
+                }
             }
         },
 
         render(camX) {
             const screenX = this.x - camX;
             const screenY = this.y;
-            const animArray = Math.abs(this.vx) > 10 ? MARTA_ANIMS.run : MARTA_ANIMS.idle;
-            const frame = animArray[this.frameIndex % animArray.length];
+            const isMoving = Math.abs(this.vx) > 10;
+            const animFrames = gameState === "GAMEOVER" ? assets.char1_dead : (isMoving ? assets.char1_run : assets.char1_idle);
+            const curImg = animFrames[this.frameIndex % animFrames.length] || assets.char1_run[0];
 
             ctx.save();
             ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
@@ -3015,14 +3070,18 @@
             ctx.fill();
             ctx.restore();
 
-            if (assets.marta.complete && frame) {
-                const [sx, sy, sw, sh] = frame;
-                const renderW = sw * 0.42;
-                const renderH = sh * 0.42;
-                ctx.drawImage(assets.marta, sx, sy, sw, sh, screenX - renderW / 2, screenY - renderH, renderW, renderH);
+            if (curImg && curImg.complete && curImg.naturalWidth > 0) {
+                const renderH = 88;
+                const imgAspect = curImg.naturalWidth / curImg.naturalHeight;
+                const renderW = renderH * imgAspect;
+
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.drawImage(curImg, -renderW / 2, -renderH, renderW, renderH);
+                ctx.restore();
             }
 
-            drawNameplate(screenX, screenY - 70, "Márta", "#a855f7");
+            drawNameplate(screenX, screenY - 94, "Márta", "#a855f7");
         }
     };
 
@@ -3049,9 +3108,10 @@
             this.y = GROUND_Y;
 
             this.frameTimer += dt;
+            const animFrames = gameState === "GAMEOVER" ? assets.enci_idle : assets.enci_run;
             if (this.frameTimer >= 0.08) {
                 this.frameTimer = 0;
-                this.frameIndex = (this.frameIndex + 1) % ENCI_ANIMS.run.length;
+                this.frameIndex = (this.frameIndex + 1) % animFrames.length;
             }
 
             // Catch check
@@ -3064,7 +3124,8 @@
         render(camX) {
             const screenX = this.x - camX;
             const screenY = this.y;
-            const frame = ENCI_ANIMS.run[this.frameIndex % ENCI_ANIMS.run.length];
+            const animFrames = gameState === "GAMEOVER" ? assets.enci_idle : assets.enci_run;
+            const curImg = animFrames[this.frameIndex % animFrames.length] || assets.enci_run[0];
 
             ctx.save();
             ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
@@ -3073,14 +3134,18 @@
             ctx.fill();
             ctx.restore();
 
-            if (assets.enci.complete && frame) {
-                const [sx, sy, sw, sh] = frame;
-                const renderW = sw * 0.5;
-                const renderH = sh * 0.5;
-                ctx.drawImage(assets.enci, sx, sy, sw, sh, screenX - renderW / 2, screenY - renderH, renderW, renderH);
+            if (curImg && curImg.complete && curImg.naturalWidth > 0) {
+                const renderH = 96;
+                const imgAspect = curImg.naturalWidth / curImg.naturalHeight;
+                const renderW = renderH * imgAspect;
+
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.drawImage(curImg, -renderW / 2, -renderH, renderW, renderH);
+                ctx.restore();
             }
 
-            drawNameplate(screenX, screenY - 72, "Enci", "#ef4444");
+            drawNameplate(screenX, screenY - 102, "Enci", "#ef4444");
         }
     };
 
